@@ -2,11 +2,15 @@ name: Build and Package OfflineCatalogApp
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: macos-latest
+
+    env:
+      THEOS=/Users/runner/theos
 
     steps:
       - name: Checkout repo
@@ -17,50 +21,26 @@ jobs:
           brew update
           brew install ldid dpkg make unzip zip
 
-      - name: Clone Theos
+      - name: Setup Theos
         run: |
-          git clone --depth=1 https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
+          if [ ! -d "$THEOS" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git $THEOS
+          fi
+          echo "Theos installed at $THEOS"
+          export PATH="$THEOS/bin:$PATH"
 
-      - name: Build with Theos
-        env:
-          THEOS: ${{ env.THEOS }}
-          PATH: ${{ env.PATH }}
+      - name: Build tweak using Theos
+        shell: bash
         run: |
-          cd $GITHUB_WORKSPACE
+          source $THEOS/setup.sh
           make clean
-          make install
+          make
 
-      - name: Package .ipa
-        run: |
-          APP_NAME="OfflineCatalogApp"
-          PAYLOAD_DIR="Payload"
-          IPA_NAME="${APP_NAME}.ipa"
-          ENTITLEMENTS="entitlements.plist"
+      - name: Run build.sh to package IPA
+        run: ./build.sh
 
-          rm -rf "$PAYLOAD_DIR" "$IPA_NAME"
-
-          if [ ! -d "${APP_NAME}.app" ]; then
-            echo "Error: ${APP_NAME}.app not found"
-            exit 1
-          fi
-
-          mkdir -p "$PAYLOAD_DIR"
-          cp -r "${APP_NAME}.app" "$PAYLOAD_DIR/"
-
-          if ! command -v ldid &> /dev/null; then
-            echo "Error: ldid is not installed."
-            exit 1
-          fi
-
-          ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/${APP_NAME}.app/${APP_NAME}"
-
-          zip -r "$IPA_NAME" "$PAYLOAD_DIR"
-          rm -rf "$PAYLOAD_DIR"
-
-      - name: Upload .ipa artifact
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OfflineCatalogApp-IPA
+          name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
