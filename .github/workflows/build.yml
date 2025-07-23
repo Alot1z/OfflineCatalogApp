@@ -82,4 +82,4 @@ jobs:
           path: OfflineCatalogApp.ipa
 
       - name: Confirm artifact upload
-        run: echo "Artifact upload completed"
+        run: echo "Artifacts should be uploaded now"
