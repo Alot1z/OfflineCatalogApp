@@ -8,11 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-ventura-14
 
     env:
       THEOS: /tmp/theos
-      PATH: /tmp/theos/bin:$PATH
+      PATH: /tmp/theos/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
     steps:
       - name: Checkout repository
@@ -46,7 +46,7 @@ jobs:
         run: ./build.sh
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
