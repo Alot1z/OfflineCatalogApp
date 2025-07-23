@@ -2,35 +2,49 @@
 set -e
 
 APP_NAME="OfflineCatalogApp"
-APP_DIR="./${APP_NAME}.app"
+SCHEME="$APP_NAME"
+BUILD_DIR="./build"
+APP_PATH="$BUILD_DIR/Build/Products/Release-iphoneos/${APP_NAME}.app"
 PAYLOAD_DIR="./Payload"
 IPA_NAME="${APP_NAME}.ipa"
 ENTITLEMENTS="app.entitlements"
 
 echo "Step 1: Clean up old build artifacts"
-rm -rf "$PAYLOAD_DIR" "$IPA_NAME"
+rm -rf "$PAYLOAD_DIR" "$IPA_NAME" "$BUILD_DIR"
 
-echo "Step 2: Check if app directory exists"
-if [ ! -d "$APP_DIR" ]; then
-  echo "Error: $APP_DIR does not exist. Please build the app first."
+echo "Step 2: Build app with xcodebuild"
+xcodebuild \
+  -scheme "$SCHEME" \
+  -configuration Release \
+  -derivedDataPath "$BUILD_DIR"
+
+echo "Step 3: Check if app was built successfully"
+if [ ! -d "$APP_PATH" ]; then
+  echo "Error: Built app not found at $APP_PATH"
   exit 1
 fi
 
-echo "Step 3: Create Payload directory and copy .app"
+echo "Step 4: Prepare Payload directory"
 mkdir -p "$PAYLOAD_DIR"
-cp -r "$APP_DIR" "$PAYLOAD_DIR/"
+cp -r "$APP_PATH" "$PAYLOAD_DIR/"
 
-echo "Step 4: Sign the app with ldid"
+echo "Step 5: Sign the app with ldid"
 if ! command -v ldid &> /dev/null; then
   echo "Error: ldid not found in PATH. Please install ldid."
   exit 1
 fi
-ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
 
-echo "Step 5: Package Payload into .ipa file"
+if [ ! -f "$ENTITLEMENTS" ]; then
+  echo "Warning: Entitlements file '$ENTITLEMENTS' not found, signing without entitlements."
+  ldid "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
+else
+  ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
+fi
+
+echo "Step 6: Package Payload into .ipa file"
 zip -r "$IPA_NAME" "$PAYLOAD_DIR"
 
-echo "Step 6: Cleanup"
+echo "Step 7: Cleanup"
 rm -rf "$PAYLOAD_DIR"
 
 echo "Build complete! Generated $IPA_NAME"
