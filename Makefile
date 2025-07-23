@@ -13,5 +13,5 @@ OfflineCatalogApp_FRAMEWORKS = UIKit Foundation
 include $(THEOS_MAKE_PATH)/bundle.mk
 
 after-stage::
-	# Copy entitlements file for signing
+	@echo "Signing app binary with entitlements..."
 	ldid -Sentitlements.plist $(THEOS_STAGING_DIR)/Applications/OfflineCatalogApp.app/OfflineCatalogApp
