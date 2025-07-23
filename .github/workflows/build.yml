@@ -8,11 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: macos-ventura-14
+    runs-on: macos-14
 
     env:
       THEOS: /tmp/theos
-      PATH: /tmp/theos/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+      PATH: /tmp/theos/bin:/usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
 
     steps:
       - name: Checkout repository
@@ -51,7 +51,7 @@ jobs:
         run: |
           if [ ! -d "$THEOS" ]; then
             echo "Cloning Theos..."
-            git clone --depth=1 https://github.com/theos/theos.git "$THEOS" || exit 1
+            git clone --recursive https://github.com/theos/theos.git "$THEOS" || exit 1
           else
             echo "Theos directory exists, skipping clone"
           fi
@@ -87,6 +87,5 @@ jobs:
           name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
 
-      - name: Debug: List all artifacts uploaded
-        run: |
-          echo "Artifacts should be uploaded now"
+      - name: Debug: Confirm artifact uploaded
+        run: echo "Artifacts should be uploaded now"
