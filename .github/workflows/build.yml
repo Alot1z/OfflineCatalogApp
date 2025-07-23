@@ -18,11 +18,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Verify tar exists
         run: |
-          brew install ldid dpkg make unzip zip || true
-          # tar burde være installeret på macos-latest, men check:
+          echo "Checking tar binary location and version"
           which tar
+          tar --version
+
+      - name: Install Homebrew dependencies
+        run: |
+          brew update || true
+          brew install ldid dpkg make unzip zip || true
 
       - name: Clone Theos if missing
         run: |
@@ -37,11 +42,11 @@ jobs:
           make clean
           make
 
-      - name: Package IPA
+      - name: Run build script to package app
         run: ./build.sh
 
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
         with:
           name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
