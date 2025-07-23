@@ -14,6 +14,7 @@ rm -rf "$PAYLOAD_DIR" "$IPA_NAME" "$BUILD_DIR"
 
 echo "Step 2: Build app with xcodebuild"
 xcodebuild \
+  -project "${APP_NAME}.xcodeproj" \
   -scheme "$SCHEME" \
   -configuration Release \
   -derivedDataPath "$BUILD_DIR"
