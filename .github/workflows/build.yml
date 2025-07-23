@@ -1,3 +1,11 @@
+name: Build OfflineCatalogApp
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
 jobs:
   build:
     runs-on: macos-14
@@ -6,16 +14,40 @@ jobs:
       THEOS: ${{ env.HOME }}/theos
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Add Theos bin to PATH
         run: echo "${{ env.THEOS }}/bin" >> $GITHUB_PATH
 
+      - name: Debug: List current directory
+        run: |
+          echo "Listing root directory:"
+          ls -al /
+          echo "Listing working directory:"
+          ls -al $GITHUB_WORKSPACE
+
+      - name: Debug: Check tar availability
+        run: |
+          echo "Which tar:"
+          which tar || echo "tar not found"
+          echo "tar version:"
+          tar --version || echo "tar version not found"
+
       - name: Install Homebrew dependencies
         run: |
+          echo "Updating brew and installing dependencies..."
           brew update
           brew install ldid dpkg make unzip zip
+
+      - name: Debug: Show installed packages
+        run: |
+          echo "Check ldid version:"
+          ldid -v || echo "ldid not installed"
+          echo "Check dpkg version:"
+          dpkg --version || echo "dpkg not installed"
+          echo "Check make version:"
+          make --version || echo "make not installed"
 
       - name: Clone Theos if missing
         run: |
@@ -23,17 +55,39 @@ jobs:
             echo "Cloning Theos to $THEOS"
             git clone --recursive https://github.com/theos/theos.git "$THEOS"
           else
-            echo "Theos already exists at $THEOS"
+            echo "Theos directory exists, skipping clone"
           fi
 
-      - name: Debug: List Theos directory
+      - name: Debug: List Theos directory contents
         run: ls -al $THEOS
 
       - name: Build tweak with Theos
         shell: bash
         run: |
-          echo "Listing THEOS contents before sourcing setup.sh"
-          ls -al $THEOS
+          echo "Sourcing Theos setup..."
           source "$THEOS/setup.sh"
+          echo "Cleaning previous build..."
           make clean
+          echo "Starting build..."
           make
+
+      - name: Debug: List built files
+        run: ls -al
+
+      - name: Run build script to package app
+        run: |
+          echo "Running build.sh..."
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Debug: List after build.sh
+        run: ls -al
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OfflineCatalogApp.ipa
+          path: OfflineCatalogApp.ipa
+
+      - name: Debug: Confirm artifact uploaded
+        run: echo "Artifacts should be uploaded now"
