@@ -1,9 +1,8 @@
-name: Build and Package OfflineCatalogApp
+name: Build with Theos
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -11,23 +10,33 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Xcode 15.4
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
-      - name: Build app with xcodebuild
+      - name: Install dependencies
         run: |
-          xcodebuild -project OfflineCatalogApp.xcodeproj -scheme OfflineCatalogApp -configuration Release -derivedDataPath build
+          brew install ldid dpkg make clang
 
-      - name: Make build script executable
-        run: chmod +x ./build.sh
+      - name: Clone Theos
+        run: |
+          git clone --depth=1 https://github.com/theos/theos.git ~/theos
 
-      - name: Run build script
-        run: ./build.sh
+      - name: Set THEOS env vars
+        run: |
+          echo "export THEOS=~/theos" >> $GITHUB_ENV
+          echo "export PATH=\$THEOS/bin:\$PATH" >> $GITHUB_ENV
+          echo "export SDKVERSION=15.2" >> $GITHUB_ENV
 
-      - name: Upload IPA artifact
+      - name: Build with Theos
+        run: |
+          make -C ./path_to_your_theos_project clean
+          make -C ./path_to_your_theos_project
+
+      - name: Package and sign .app
+        run: |
+          # Kopier .app, signér med ldid, pak som ipa osv.
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OfflineCatalogApp
+          name: OfflineCatalogApp-ipa
           path: OfflineCatalogApp.ipa
