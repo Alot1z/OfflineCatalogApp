@@ -12,7 +12,7 @@ jobs:
 
     env:
       THEOS: /tmp/theos
-      PATH: /tmp/theos/bin:${{ env.PATH }}
+      PATH: /tmp/theos/bin:$PATH
 
     steps:
       - name: Checkout repository
@@ -21,12 +21,11 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ldid dpkg make unzip zip || true
-          # clang er allerede installeret på macos-latest runner
 
       - name: Clone Theos if not present
         run: |
-          if [ ! -d "${{ env.THEOS }}" ]; then
-            git clone --depth=1 https://github.com/theos/theos.git "${{ env.THEOS }}"
+          if [ ! -d "$THEOS" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
           else
             echo "Theos already exists"
           fi
@@ -34,7 +33,7 @@ jobs:
       - name: Build tweak with Theos
         shell: bash
         run: |
-          source "${{ env.THEOS }}/setup.sh"
+          source "$THEOS/setup.sh"
           make clean
           make
 
