@@ -2,36 +2,32 @@ name: Build and Package OfflineCatalogApp
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-      - name: Build OfflineCatalogApp
+      - name: Build app with xcodebuild
         run: |
-          xcodebuild -scheme OfflineCatalogApp -configuration Release -derivedDataPath build
+          xcodebuild -project OfflineCatalogApp.xcodeproj -scheme OfflineCatalogApp -configuration Release -derivedDataPath build
 
-      - name: Install ldid (if not preinstalled)
-        run: |
-          if ! command -v ldid &> /dev/null; then
-            brew install ldid
-          fi
+      - name: Make build script executable
+        run: chmod +x ./build.sh
 
-      - name: Run build.sh to package app
-        run: chmod +x ./build.sh && ./build.sh
+      - name: Run build script
+        run: ./build.sh
 
-      - name: Upload build artifact (IPA)
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OfflineCatalogApp-IPA
-          path: OfflineCatalogApp-v4.ipa
+          name: OfflineCatalogApp
+          path: OfflineCatalogApp.ipa
