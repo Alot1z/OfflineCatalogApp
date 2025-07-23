@@ -1,4 +1,4 @@
-name: Build with Theos
+name: Build and Package OfflineCatalogApp
 
 on:
   push:
@@ -9,33 +9,28 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
-          brew install ldid dpkg make clang
+          brew install ldid dpkg make clang unzip zip
 
       - name: Clone Theos
         run: |
-          git clone --depth=1 https://github.com/theos/theos.git ~/theos
+          git clone --depth=1 https://github.com/theos/theos.git $HOME/theos
 
-      - name: Set THEOS env vars
+      - name: Set THEOS environment variables
+        shell: bash
         run: |
-          echo "export THEOS=~/theos" >> $GITHUB_ENV
-          echo "export PATH=\$THEOS/bin:\$PATH" >> $GITHUB_ENV
-          echo "export SDKVERSION=15.2" >> $GITHUB_ENV
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
+          echo "SDKVERSION=15.2" >> $GITHUB_ENV
 
-      - name: Build with Theos
-        run: |
-          make -C ./path_to_your_theos_project clean
-          make -C ./path_to_your_theos_project
+      - name: Build the app with Theos
+        run: ./build.sh
 
-      - name: Package and sign .app
-        run: |
-          # Kopier .app, signér med ldid, pak som ipa osv.
-
-      - name: Upload artifact
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: OfflineCatalogApp-ipa
