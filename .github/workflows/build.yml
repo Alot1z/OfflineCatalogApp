@@ -9,24 +9,21 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
           brew update
           brew install ldid dpkg make unzip zip
-          # clang er allerede installeret på macos-latest image
-          # Hvis nødvendigt, kan du installere clang-format eller lignende separat
 
-      - name: Setup Theos
+      - name: Clone Theos
         run: |
           git clone --depth=1 https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
-          ls -la $HOME/theos
 
-      - name: Build app with Theos
+      - name: Build with Theos
         env:
           THEOS: ${{ env.THEOS }}
           PATH: ${{ env.PATH }}
@@ -35,7 +32,7 @@ jobs:
           make clean
           make install
 
-      - name: Package app into .ipa
+      - name: Package .ipa
         run: |
           APP_NAME="OfflineCatalogApp"
           PAYLOAD_DIR="Payload"
@@ -45,7 +42,7 @@ jobs:
           rm -rf "$PAYLOAD_DIR" "$IPA_NAME"
 
           if [ ! -d "${APP_NAME}.app" ]; then
-            echo "Error: ${APP_NAME}.app not found. Build failed?"
+            echo "Error: ${APP_NAME}.app not found"
             exit 1
           fi
 
@@ -60,7 +57,6 @@ jobs:
           ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/${APP_NAME}.app/${APP_NAME}"
 
           zip -r "$IPA_NAME" "$PAYLOAD_DIR"
-
           rm -rf "$PAYLOAD_DIR"
 
       - name: Upload .ipa artifact
