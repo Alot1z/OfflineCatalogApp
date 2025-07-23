@@ -18,35 +18,75 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify tar exists
+      - name: Debug: List current directory
         run: |
-          echo "Checking tar binary location and version"
-          which tar
-          tar --version
+          echo "Listing root directory:"
+          ls -al /
+          echo "Listing working directory:"
+          ls -al $GITHUB_WORKSPACE
+
+      - name: Debug: Check tar availability
+        run: |
+          echo "Which tar:"
+          which tar || echo "tar not found"
+          echo "tar version:"
+          tar --version || echo "tar version not found"
 
       - name: Install Homebrew dependencies
         run: |
-          brew update || true
-          brew install ldid dpkg make unzip zip || true
+          echo "Updating brew and installing dependencies..."
+          brew update || echo "brew update failed"
+          brew install ldid dpkg make unzip zip || echo "brew install failed"
+
+      - name: Debug: Show installed packages
+        run: |
+          echo "Check ldid version:"
+          ldid -v || echo "ldid not installed"
+          echo "Check dpkg version:"
+          dpkg --version || echo "dpkg not installed"
+          echo "Check make version:"
+          make --version || echo "make not installed"
 
       - name: Clone Theos if missing
         run: |
           if [ ! -d "$THEOS" ]; then
-            git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+            echo "Cloning Theos..."
+            git clone --depth=1 https://github.com/theos/theos.git "$THEOS" || exit 1
+          else
+            echo "Theos directory exists, skipping clone"
           fi
+
+      - name: Debug: List Theos directory contents
+        run: ls -al $THEOS
 
       - name: Build tweak with Theos
         shell: bash
         run: |
+          echo "Sourcing Theos setup..."
           source "$THEOS/setup.sh"
+          echo "Cleaning previous build..."
           make clean
+          echo "Starting build..."
           make
 
+      - name: Debug: List built files
+        run: ls -al
+
       - name: Run build script to package app
-        run: ./build.sh
+        run: |
+          echo "Running build.sh..."
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Debug: List after build.sh
+        run: ls -al
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
+
+      - name: Debug: List all artifacts uploaded
+        run: |
+          echo "Artifacts should be uploaded now"
