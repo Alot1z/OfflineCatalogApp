@@ -28,7 +28,7 @@ fi
 if [ -f "$ENTITLEMENTS" ]; then
   ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
 else
-  echo "Warning: no entitlements file, signing without entitlements"
+  echo "Warning: No entitlements file found, signing without entitlements."
   ldid "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
 fi
 
