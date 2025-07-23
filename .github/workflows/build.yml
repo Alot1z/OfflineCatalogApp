@@ -18,14 +18,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set PATH for Theos
-        run: echo "/tmp/theos/bin" >> $GITHUB_PATH
+        run: |
+          echo "/tmp/theos/bin" >> "$GITHUB_PATH"
 
       - name: Debug: List current directory
         run: |
           echo "Listing root directory:"
           ls -al /
           echo "Listing working directory:"
-          ls -al $GITHUB_WORKSPACE
+          ls -al "$GITHUB_WORKSPACE"
 
       - name: Debug: Check tar availability
         run: |
@@ -58,8 +59,8 @@ jobs:
             echo "Theos directory exists, skipping clone"
           fi
 
-      - name: Debug: List Theos directory contents
-        run: ls -al $THEOS
+      - name: Debug: List Theos folder contents
+        run: ls -al "$THEOS"
 
       - name: Build tweak with Theos
         shell: bash
