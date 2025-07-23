@@ -2,8 +2,7 @@ name: Build OfflineCatalogApp
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 jobs:
@@ -18,77 +17,69 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set PATH for Theos
-        run: |
-          echo "/tmp/theos/bin" >> $GITHUB_PATH
+        run: echo "/tmp/theos/bin" >> $GITHUB_PATH
 
-      - name: Debug: List current directory
+      - name: Debug: List workspace contents
         run: |
-          echo "Listing root directory:"
-          ls -al /
-          echo "Listing working directory:"
-          ls -al "$GITHUB_WORKSPACE"
+          echo "Workspace root:"
+          ls -al $GITHUB_WORKSPACE
+          echo "Check build.sh presence:"
+          ls -l ./build.sh
 
-      - name: Debug: Check tar availability
+      - name: Debug: Check environment and tools availability
         run: |
-          echo "Which tar:"
-          which tar || echo "tar not found"
-          echo "tar version:"
-          tar --version || echo "tar version not found"
+          echo "PATH: $PATH"
+          which tar || echo "tar missing"
+          tar --version || echo "tar version missing"
+          which git || echo "git missing"
+          which make || echo "make missing"
 
       - name: Install Homebrew dependencies
         run: |
-          echo "Updating brew and installing dependencies..."
-          brew update || echo "brew update failed"
-          brew install ldid dpkg make unzip zip || echo "brew install failed"
+          brew update
+          brew install ldid dpkg make unzip zip || echo "Failed to install one or more dependencies"
 
-      - name: Debug: Show installed packages
+      - name: Debug: Check versions of installed tools
         run: |
-          echo "Check ldid version:"
-          ldid -v || echo "ldid not installed"
-          echo "Check dpkg version:"
-          dpkg --version || echo "dpkg not installed"
-          echo "Check make version:"
-          make --version || echo "make not installed"
+          ldid -v
+          dpkg --version
+          make --version
+          git --version
 
-      - name: Clone Theos if missing
+      - name: Clone Theos repository if missing
         run: |
           if [ ! -d "$THEOS" ]; then
-            echo "Cloning Theos..."
-            git clone --recursive https://github.com/theos/theos.git "$THEOS" || exit 1
+            git clone --recursive https://github.com/theos/theos.git "$THEOS"
           else
-            echo "Theos directory exists, skipping clone"
+            echo "Theos directory already exists"
           fi
 
-      - name: Debug: List Theos folder contents
-        run: ls -al "$THEOS"
+      - name: Debug: List Theos directory
+        run: ls -al $THEOS
 
-      - name: Build tweak with Theos
+      - name: Build tweak using Theos
         shell: bash
         run: |
-          echo "Sourcing Theos setup..."
           source "$THEOS/setup.sh"
-          echo "Cleaning previous build..."
           make clean
-          echo "Starting build..."
           make
 
-      - name: Debug: List built files
+      - name: Debug: List all files after build
         run: ls -al
 
-      - name: Run build script to package app
+      - name: Run build.sh to package the app
         run: |
-          echo "Running build.sh..."
           chmod +x ./build.sh
           ./build.sh
 
-      - name: Debug: List after build.sh
+      - name: Debug: List files after build.sh
         run: ls -al
 
-      - name: Upload build artifact
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
 
-      - name: Debug: Confirm artifact uploaded
-        run: echo "Artifacts should be uploaded now"
+      - name: Confirm artifact upload
+        run: echo "Artifact upload completed"
