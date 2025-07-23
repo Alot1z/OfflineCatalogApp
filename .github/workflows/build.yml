@@ -1,4 +1,4 @@
-name: Build IPA
+name: Artifact v4
 
 on:
   push:
@@ -9,17 +9,29 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Install ldid
-        run: brew install ldid
+      - name: Select Xcode 15.4
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-      - name: Build IPA
+      - name: Build app using xcodebuild
         run: |
-          chmod +x build.sh
-          ./build.sh
+          xcodebuild \
+            -scheme OfflineCatalogApp \
+            -configuration Release \
+            -derivedDataPath build
 
-      - uses: actions/upload-artifact@v4
+      - name: Package .app into .ipa
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/OfflineCatalogApp.app Payload/
+          /usr/bin/codesign --sign "-" --force --deep Payload/OfflineCatalogApp.app
+          zip -r OfflineCatalogApp.ipa Payload
+          ls -lh OfflineCatalogApp.ipa
+
+      - name: Upload .ipa as artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: OfflineCatalogApp
+          name: OfflineCatalogApp.ipa
           path: OfflineCatalogApp.ipa
