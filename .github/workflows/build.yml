@@ -21,34 +21,25 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ldid dpkg make unzip zip || true
-          # clang install via brew er ikke nødvendigt på macos-latest, da clang er inkluderet
+          # clang er allerede installeret på macos-latest runner
 
-      - name: Clone Theos if needed
-        shell: bash
+      - name: Clone Theos if not present
         run: |
-          if [ ! -d "$THEOS" ]; then
-            echo "Cloning Theos into $THEOS..."
-            git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+          if [ ! -d "${{ env.THEOS }}" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git "${{ env.THEOS }}"
           else
-            echo "Theos already exists at $THEOS"
+            echo "Theos already exists"
           fi
 
       - name: Build tweak with Theos
         shell: bash
         run: |
-          if [ ! -f "$THEOS/setup.sh" ]; then
-            echo "Error: $THEOS/setup.sh not found!"
-            exit 1
-          fi
-
-          source "$THEOS/setup.sh"
-
+          source "${{ env.THEOS }}/setup.sh"
           make clean
           make
 
       - name: Package IPA
-        run: |
-          ./build.sh
+        run: ./build.sh
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
