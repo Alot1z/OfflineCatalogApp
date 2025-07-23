@@ -1,4 +1,4 @@
-name: Build OfflineCatalogApp with Theos
+name: Build OfflineCatalogApp
 
 on:
   push:
@@ -21,13 +21,13 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ldid dpkg make unzip zip || true
+          # tar burde være installeret på macos-latest, men check:
+          which tar
 
-      - name: Clone Theos if not present
+      - name: Clone Theos if missing
         run: |
           if [ ! -d "$THEOS" ]; then
             git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
-          else
-            echo "Theos already exists"
           fi
 
       - name: Build tweak with Theos
