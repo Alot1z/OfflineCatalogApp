@@ -4,45 +4,51 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   build:
     runs-on: macos-latest
+
     env:
       THEOS: /tmp/theos
+      PATH: /tmp/theos/bin:${{ env.PATH }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
-          brew update
-          brew install ldid dpkg make unzip zip git
+          brew install ldid dpkg make unzip zip || true
+          # clang install via brew er ikke nødvendigt på macos-latest, da clang er inkluderet
 
-      - name: Clone Theos if not present
+      - name: Clone Theos if needed
+        shell: bash
         run: |
           if [ ! -d "$THEOS" ]; then
+            echo "Cloning Theos into $THEOS..."
             git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
           else
-            echo "Theos already cloned"
+            echo "Theos already exists at $THEOS"
           fi
-
-      - name: List Theos directory contents
-        run: ls -la $THEOS
 
       - name: Build tweak with Theos
         shell: bash
-        env:
-          THEOS: /tmp/theos
-          PATH: /tmp/theos/bin:$PATH
         run: |
-          source $THEOS/setup.sh
+          if [ ! -f "$THEOS/setup.sh" ]; then
+            echo "Error: $THEOS/setup.sh not found!"
+            exit 1
+          fi
+
+          source "$THEOS/setup.sh"
+
           make clean
           make
 
-      - name: Run build.sh to create IPA
-        run: ./build.sh
+      - name: Package IPA
+        run: |
+          ./build.sh
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
