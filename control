@@ -1,0 +1,9 @@
+Package: com.yourname.offlinecatalogapp
+Name: OfflineCatalogApp
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Offline Catalog App built with Theos, displaying an alert after SpringBoard launch
+Maintainer: Your Name <your.email@example.com>
+Author: Your Name
+Section: Applications
+Depends: firmware (>= 14.0)
