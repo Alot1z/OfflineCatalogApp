@@ -1,16 +1,84 @@
-name: Test YAML syntax
+name: Build OfflineCatalogApp
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build:
     runs-on: macos-14
 
+    env:
+      THEOS: /tmp/theos
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set PATH for Theos
+        run: echo "/tmp/theos/bin" >> $GITHUB_PATH
+
+      - name: Debug: List current directory
+        run: |
+          echo "Listing root directory:"
+          ls -al /
+          echo "Listing working directory:"
+          ls -al $GITHUB_WORKSPACE
+
+      - name: Debug: Check tar availability
+        run: |
+          echo "Which tar:"
+          which tar || echo "tar not found"
+          echo "tar version:"
+          tar --version || echo "tar version not found"
 
       - name: Install Homebrew dependencies
         run: |
           brew update
           brew install ldid dpkg make unzip zip
+
+      - name: Debug: Show installed packages
+        run: |
+          ldid -v || echo "ldid not installed"
+          dpkg --version || echo "dpkg not installed"
+          make --version || echo "make not installed"
+
+      - name: Clone Theos if missing
+        run: |
+          if [ ! -d "$THEOS" ]; then
+            git clone --recursive https://github.com/theos/theos.git "$THEOS"
+          else
+            echo "Theos directory exists, skipping clone"
+          fi
+
+      - name: Debug: List Theos directory contents
+        run: ls -al $THEOS
+
+      - name: Build tweak with Theos
+        shell: bash
+        run: |
+          source "$THEOS/setup.sh"
+          make clean
+          make
+
+      - name: Debug: List built files
+        run: ls -al
+
+      - name: Run build script to package app
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Debug: List after build.sh
+        run: ls -al
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OfflineCatalogApp.ipa
+          path: OfflineCatalogApp.ipa
+
+      - name: Debug: Confirm artifact uploaded
+        run: echo "Artifacts should be uploaded now"
