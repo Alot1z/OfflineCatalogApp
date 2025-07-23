@@ -1,55 +1,38 @@
-name: Build OfflineCatalogApp
+#!/bin/bash
+set -e
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+APP_NAME="OfflineCatalogApp"
+APP_APPDIR="./obj/iphoneos/${APP_NAME}.app"
+PAYLOAD_DIR="./Payload"
+IPA_NAME="${APP_NAME}.ipa"
+ENTITLEMENTS="entitlements.plist"
 
-jobs:
-  build:
-    runs-on: macos-14
+echo "Cleaning old build artifacts..."
+rm -rf "$PAYLOAD_DIR" "$IPA_NAME"
 
-    env:
-      THEOS: /tmp/theos
+if [ ! -d "$APP_APPDIR" ]; then
+  echo "Error: App directory $APP_APPDIR not found. Build failed?"
+  exit 1
+fi
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+echo "Copying app to Payload directory..."
+mkdir -p "$PAYLOAD_DIR"
+cp -r "$APP_APPDIR" "$PAYLOAD_DIR/"
 
-      - name: Set PATH for Theos
-        run: echo "/tmp/theos/bin" >> $GITHUB_PATH
+APP_BINARY="$PAYLOAD_DIR/${APP_NAME}.app/${APP_NAME}"
+if [ ! -f "$APP_BINARY" ]; then
+  echo "Error: App binary $APP_BINARY not found!"
+  ls -l "$PAYLOAD_DIR/${APP_NAME}.app"
+  exit 1
+fi
 
-      - name: Install Homebrew dependencies
-        run: |
-          brew update
-          brew install ldid dpkg make unzip zip
+echo "Signing app binary with ldid..."
+ldid -S"$ENTITLEMENTS" "$APP_BINARY"
 
-      - name: Clone Theos if missing
-        run: |
-          if [ ! -d "$THEOS" ]; then
-            git clone --recursive https://github.com/theos/theos.git "$THEOS"
-          else
-            echo "Theos already cloned"
-          fi
+echo "Packaging Payload into $IPA_NAME..."
+zip -r "$IPA_NAME" "$PAYLOAD_DIR"
 
-      - name: Build tweak with Theos
-        shell: bash
-        run: |
-          source "$THEOS/setup.sh"
-          make clean
-          make
+echo "Cleaning up..."
+rm -rf "$PAYLOAD_DIR"
 
-      - name: Debug: List built files
-        run: ls -al ./obj/iphoneos/OfflineCatalogApp.app
-
-      - name: Run build script to package app
-        run: |
-          chmod +x ./build.sh
-          ./build.sh
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: OfflineCatalogApp.ipa
-          path: OfflineCatalogApp.ipa
+echo "Build completed: $IPA_NAME"
