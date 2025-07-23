@@ -1,4 +1,4 @@
-name: Artifact v4
+name: Build and Package OfflineCatalogApp
 
 on:
   push:
@@ -15,5 +15,17 @@ jobs:
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
+      - name: Install ldid
+        run: brew install ldid
+
+      - name: Make build.sh executable
+        run: chmod +x ./build.sh
+
       - name: Run build.sh
         run: ./build.sh
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: OfflineCatalogApp.ipa
+          path: OfflineCatalogApp.ipa
