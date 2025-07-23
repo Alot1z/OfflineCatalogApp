@@ -12,11 +12,13 @@ jobs:
 
     env:
       THEOS: /tmp/theos
-      PATH: /tmp/theos/bin:/usr/bin:/bin:/usr/sbin:/sbin:${{ env.PATH }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set PATH for Theos
+        run: echo "/tmp/theos/bin" >> $GITHUB_PATH
 
       - name: Debug: List current directory
         run: |
