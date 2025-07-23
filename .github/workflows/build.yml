@@ -16,54 +16,54 @@ jobs:
         run: |
           brew update
           brew install ldid dpkg make unzip zip
-          # clang følger med macOS, så det behøver du ikke installere
+          # clang er allerede installeret på macos-latest image
+          # Hvis nødvendigt, kan du installere clang-format eller lignende separat
 
-      - name: Setup Theos environment
+      - name: Setup Theos
         run: |
           git clone --depth=1 https://github.com/theos/theos.git $HOME/theos
-          export THEOS=$HOME/theos
-          echo "export THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "export PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
+          ls -la $HOME/theos
 
       - name: Build app with Theos
+        env:
+          THEOS: ${{ env.THEOS }}
+          PATH: ${{ env.PATH }}
         run: |
-          source $HOME/theos/setup.sh
+          cd $GITHUB_WORKSPACE
           make clean
           make install
 
-      - name: Prepare Payload and sign app
+      - name: Package app into .ipa
         run: |
           APP_NAME="OfflineCatalogApp"
-          APP_DIR="./obj/iphoneos/$APP_NAME.app"  # Theos default output path
-          PAYLOAD_DIR="./Payload"
-          IPA_NAME="$APP_NAME.ipa"
+          PAYLOAD_DIR="Payload"
+          IPA_NAME="${APP_NAME}.ipa"
           ENTITLEMENTS="entitlements.plist"
 
-          echo "Step 1: Clean up old artifacts"
           rm -rf "$PAYLOAD_DIR" "$IPA_NAME"
 
-          echo "Step 2: Check if app directory exists"
-          if [ ! -d "$APP_DIR" ]; then
-            echo "Error: $APP_DIR does not exist. Build failed?"
+          if [ ! -d "${APP_NAME}.app" ]; then
+            echo "Error: ${APP_NAME}.app not found. Build failed?"
             exit 1
           fi
 
-          echo "Step 3: Create Payload directory and copy .app"
           mkdir -p "$PAYLOAD_DIR"
-          cp -r "$APP_DIR" "$PAYLOAD_DIR/"
+          cp -r "${APP_NAME}.app" "$PAYLOAD_DIR/"
 
-          echo "Step 4: Sign the app with ldid"
-          ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/$APP_NAME.app/$APP_NAME"
+          if ! command -v ldid &> /dev/null; then
+            echo "Error: ldid is not installed."
+            exit 1
+          fi
 
-          echo "Step 5: Package Payload into .ipa file"
+          ldid -S"$ENTITLEMENTS" "$PAYLOAD_DIR/${APP_NAME}.app/${APP_NAME}"
+
           zip -r "$IPA_NAME" "$PAYLOAD_DIR"
 
-          echo "Step 6: Cleanup"
           rm -rf "$PAYLOAD_DIR"
 
-          echo "Build complete! Generated $IPA_NAME"
-
-      - name: Upload build artifact
+      - name: Upload .ipa artifact
         uses: actions/upload-artifact@v4
         with:
           name: OfflineCatalogApp-IPA
