@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: macos-latest
     env:
-      THEOS: /Users/runner/theos
+      THEOS: ${{ runner.temp }}/theos
 
     steps:
       - name: Checkout repo
@@ -18,21 +18,21 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install ldid dpkg make unzip zip
+          brew install ldid dpkg make unzip zip git
 
-      - name: Setup Theos
+      - name: Clone Theos
         run: |
-          if [ ! -d "$THEOS" ]; then
-            git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+          if [ ! -d "${{ env.THEOS }}" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git "${{ env.THEOS }}"
           fi
-          echo "Theos installed at $THEOS"
+          ls -la "${{ env.THEOS }}"
         shell: bash
 
       - name: Build tweak using Theos
         shell: bash
         env:
-          THEOS: /Users/runner/theos
-          PATH: /Users/runner/theos/bin:$PATH
+          THEOS: ${{ env.THEOS }}
+          PATH: ${{ env.THEOS }}/bin:$PATH
         run: |
           source $THEOS/setup.sh
           make clean
