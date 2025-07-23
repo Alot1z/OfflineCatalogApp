@@ -28,12 +28,20 @@ jobs:
       - name: Clone Theos if not present
         run: |
           if [ ! -d "$THEOS" ]; then
+            echo "Cloning Theos to $THEOS"
             git clone --recursive https://github.com/theos/theos.git "$THEOS"
+          else
+            echo "Theos already exists at $THEOS"
           fi
+
+      - name: Debug: List Theos directory
+        run: ls -al $THEOS
 
       - name: Build tweak with Theos
         shell: bash
         run: |
+          echo "Listing contents of THEOS before sourcing setup.sh"
+          ls -al $THEOS
           source "$THEOS/setup.sh"
           make clean
           make
