@@ -1,4 +1,4 @@
-name: Build and Package OfflineCatalogApp
+name: Build OfflineCatalogApp with Theos
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
       THEOS: /tmp/theos
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Install dependencies
@@ -20,25 +20,28 @@ jobs:
           brew update
           brew install ldid dpkg make unzip zip git
 
-      - name: Clone Theos
+      - name: Clone Theos if not present
         run: |
-          if [ ! -d "${THEOS}" ]; then
-            git clone --depth=1 https://github.com/theos/theos.git "${THEOS}"
+          if [ ! -d "$THEOS" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+          else
+            echo "Theos already cloned"
           fi
-          ls -la "${THEOS}"
-        shell: bash
 
-      - name: Build tweak using Theos
+      - name: List Theos directory contents
+        run: ls -la $THEOS
+
+      - name: Build tweak with Theos
         shell: bash
         env:
           THEOS: /tmp/theos
-          PATH: /tmp/theos/bin:${{ env.PATH }}
+          PATH: /tmp/theos/bin:$PATH
         run: |
           source $THEOS/setup.sh
           make clean
           make
 
-      - name: Run build.sh to package IPA
+      - name: Run build.sh to create IPA
         run: ./build.sh
 
       - name: Upload IPA artifact
