@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: macos-latest
     env:
-      THEOS: ${{ runner.temp }}/theos
+      THEOS: /tmp/theos
 
     steps:
       - name: Checkout repo
@@ -22,17 +22,17 @@ jobs:
 
       - name: Clone Theos
         run: |
-          if [ ! -d "${{ env.THEOS }}" ]; then
-            git clone --depth=1 https://github.com/theos/theos.git "${{ env.THEOS }}"
+          if [ ! -d "${THEOS}" ]; then
+            git clone --depth=1 https://github.com/theos/theos.git "${THEOS}"
           fi
-          ls -la "${{ env.THEOS }}"
+          ls -la "${THEOS}"
         shell: bash
 
       - name: Build tweak using Theos
         shell: bash
         env:
-          THEOS: ${{ env.THEOS }}
-          PATH: ${{ env.THEOS }}/bin:$PATH
+          THEOS: /tmp/theos
+          PATH: /tmp/theos/bin:${{ env.PATH }}
         run: |
           source $THEOS/setup.sh
           make clean
